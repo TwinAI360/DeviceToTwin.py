@@ -6,7 +6,7 @@ from DCMotor import *
 
 
 #Blob storage connection
-connection_string='DefaultEndpointsProtocol=https;AccountName=rgdigitaltwin9fdf;AccountKey=01vFhg8ijBUjs0Piv6bbDlQnRuMoNd6iwfrJdNsAbVLebYEiJ0ck7rJFhGc922hX1Rtv9KHXf7wy+AStsXculQ==;EndpointSuffix=core.windows.net'
+connection_string="DefaultEndpointsProtocol=https;AccountName=twinaistorage;AccountKey=ET1kVgu4GAUmImCxf9bzv6Zr+akG501gynzapvOsvyfqm/O9rB2NVZ0vCW91wpO9XpGb3H3kYBua+AStpBTILw==;EndpointSuffix=core.windows.net"
 
 def storage_client_init():
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
