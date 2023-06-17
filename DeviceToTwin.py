@@ -1,10 +1,13 @@
 import random
 import time
 import pandas as pd
+import RPi.GPIO as GPIO
+import Adafruit_DHT
 from azure.iot.device import IoTHubDeviceClient, Message
 from azure.storage.blob import BlobServiceClient
 import json
 import requests
+from DCMotor import *
 
 #Blob storage connection
 connection_string="DefaultEndpointsProtocol=https;AccountName=twinaistorage;AccountKey=ET1kVgu4GAUmImCxf9bzv6Zr+akG501gynzapvOsvyfqm/O9rB2NVZ0vCW91wpO9XpGb3H3kYBua+AStpBTILw==;EndpointSuffix=core.windows.net"
@@ -27,6 +30,9 @@ UVSensor_MSG_TXT = '{{"UVSensorValue":{UVSensorValue},"UVSensorMinValue":{UVSens
                   '"UVSensorMaxValue":{UVSensorMaxValue}}}'
 CO2Sensor_MSG_TXT = '{{"CO2SensorValue":{CO2SensorValue},"CO2SensorMinValue":{CO2SensorMinValue},' \
                   '"CO2SensorMaxValue":{CO2SensorMaxValue}}}'
+
+# set raspberry pi gpio pin mode
+GPIO.setmode(GPIO.BCM)
 
 def storage_client_init():
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
@@ -132,8 +138,11 @@ def iothub_client_telemetry_sample_run():
         dht11Max = df2['MaxValue'][4]
         print("IoT Hub device sending sensors telemetry periodically, press Ctrl-C to exit")
         for x in df.index:
-            dht11_msg_formatted = DHT11_MSG_TXT.format(temperature=round(df['DHT11Sensor'][x], 2), minTemperature=dht11Min,
-                                                       maxTemperature=dht11Max, humidity=0.00)
+            # Fetching Temperature value from DHt11 sensor
+            humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, 2)
+            
+            dht11_msg_formatted = DHT11_MSG_TXT.format(temperature=temperature, minTemperature=dht11Min,
+                                                       maxTemperature=dht11Max, humidity=humidity)
             dht11_message = Message(dht11_msg_formatted)
             dht11_client.send_message(dht11_message)
             print(dht11_message)
@@ -161,7 +170,7 @@ def iothub_client_telemetry_sample_run():
             CO2Sensor_message = Message(CO2Sensor_msg_formatted)
             CO2Sensor_client.send_message(CO2Sensor_message)
             print(CO2Sensor_msg_formatted)
-            cell_count = predict_cell_count(round(df['dOSensor'][x], 2), round(df['pHSensor'][x], 2), round(df['UVSensor'][x], 2), round(df['CO2Sensor'][x], 2), round(df['DHT11Sensor'][x], 2))
+            cell_count = predict_cell_count(round(df['dOSensor'][x], 2), round(df['pHSensor'][x], 2), round(df['UVSensor'][x], 2), round(df['CO2Sensor'][x], 2), temperature)
             bioreactor_msg_formatted = BIOREACTOR_MSG_TXT.format(capacity=600, cellCount=round(int(float(cell_count)), 0))
 
             bioreactor_message = Message(bioreactor_msg_formatted)
